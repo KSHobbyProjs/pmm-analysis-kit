@@ -31,6 +31,11 @@ def normalize(parameters, pmin=None, pmax=None):
         pmin = np.min(parameters)
     if pmax is None:
         pmax = np.max(parameters)
+  
+    # don't normalize 1-element data sets
+    if pmin == pmax:
+        return pmin, pmax, parameters
+    
     normed_parameters = 2 * (parameters - pmin) / (pmax - pmin) - 1
     return pmin, pmax, normed_parameters
 
@@ -52,4 +57,8 @@ def denormalize(normed_parameters, pmin, pmax):
     parameters : array-like
         The denormalized list of parameters.
     """
+    # don't denormalize 1-element data sets
+    if pmin == pmax:
+        return normed_parameters 
+
     return (normed_parameters + 1) * (pmax - pmin) / 2 + pmin
