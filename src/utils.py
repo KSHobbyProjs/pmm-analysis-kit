@@ -2,6 +2,9 @@
 
 import numpy as np
 
+import logging
+logger = logging.getLogger(__name__)
+
 def normalize(parameters, pmin=None, pmax=None):
     """
     Normalize an array of parameters with respect 
@@ -34,6 +37,7 @@ def normalize(parameters, pmin=None, pmax=None):
   
     # don't normalize 1-element data sets
     if pmin == pmax:
+        logger.warning(f"Min of parameter set = max of parameter set -> defaulting to no normalization for this set.")
         return pmin, pmax, parameters
     
     normed_parameters = 2 * (parameters - pmin) / (pmax - pmin) - 1
@@ -59,6 +63,7 @@ def denormalize(normed_parameters, pmin, pmax):
     """
     # don't denormalize 1-element data sets
     if pmin == pmax:
+        logger.warning(f"Min of parameter set = max of parameter set -> defaulting to no de-normalization for this set.")
         return normed_parameters 
 
     return (normed_parameters + 1) * (pmax - pmin) / 2 + pmin

@@ -37,7 +37,9 @@ def _parse_args():
     parser.add_argument("-e", "--epochs", type=int, default=10000, help="Number of cycles to run PMM algorithm for.")
     parser.add_argument("-L", "--parameters", type=str, default="1.0", help="Parameter values at which to predict energies.")
     parser.add_argument("--store-loss", type=int, default=100, help="Frequency for storing the computing loss.")
+    parser.add_argument("--no-normalize", action="store_true", help="Runs the PMM without normalizing the sample data read from the input file.")
     parser.add_argument("-k", "--knum", type=int, default=None, help="The number of eigenvalues to write. Default is all.")
+    parser.add_argument("-q", "--quiet", action="store_false", help="Sets quiet mode. Print output suppressed.")
     parser.add_argument("-v", "--verbose", action="count", default=0, help="Increase verbosity (-v, -vv).")
     args = parser.parse_args()
     return args
@@ -67,29 +69,44 @@ def _load_data_from_input_file(input_file):
         logger.debug(f"Loaded energy data from .dat-type file.")
     return sample_Ls, sample_energies
 
-def _sample_pmm(pmm_instance, sample_Ls, sample_energies):
-    # normalize sample data so PMM trains easier
-    logger.debug(f"Normalizing sample energies and sample parameters.")
+def _parse_parameter_values(parameter_str):
+    predict_Ls = parse.parse_parameter_values(parameter_str)
+    logger.debug(f"Parameters {parameter_str} parsed -> {type(predict_Ls).__name__} "
+                 f"with min={min(predict_Ls)}, max={max(predict_Ls)}, len={len(predict_Ls)}")
+    return predict_Ls 
+
+def _sample_train_predict_notnormed(args, pmm_instance, sample_Ls, sample_energies, predict_Ls):
+    # sample pmm with data loaded from file
+    logger.info("Sampling pmm with (un-normalized) energies loaded from file.")
+    pmm_instance.sample_energies(sample_Ls, sample_energies)
+    # train pmm with sampled data
+    logger.info(f"Training pmm for {args.epochs} cycles and storing loss every {args.store_loss} cycles.")
+    _, losses = pmm_instance.train_pmm(args.epochs, args.store_loss)
+    # predict energies at given parameter values with trained PMM
+    logger.info("Predicting energies of trained PMM at given parameter values.")
+    predicted_energies = pmm_instance.predict_energies(predict_Ls)
+    return losses, predicted_energies
+
+def _sample_train_predict_normed(args, pmm_instance, sample_Ls, sample_energies, predict_Ls):
+    # sample pmm with data loaded from file after normalizing it
+    logger.info("Sampling pmm with (normed) energies loaded from file.")
+    logger.debug("Normalizing sample data before training PMM.")
     lmin, lmax, normed_sample_Ls = utils.normalize(sample_Ls)
     emin, emax, normed_sample_energies = utils.normalize(sample_energies)
     pmm_instance.sample_energies(normed_sample_Ls, normed_sample_energies)
-    return lmin, lmax, emin, emax
+    
+    # train pmm with sampled data
+    logger.info(f"Training pmm for {args.epochs} cycles and storing loss every {args.store_loss} cycles.")
+    _, losses = pmm_instance.train_pmm(args.epochs, args.store_loss)
 
-def _predict_energies_from_pmm(pmm_instance, predict_Ls_str, lmin, lmax, emin, emax):
-    logger.info(f"Parsing parameter values.") 
-    predict_Ls = parse.parse_parameter_values(predict_Ls_str)
-    logger.debug(f"Parameters {predict_Ls_str} parsed -> {type(predict_Ls).__name__} "
-                 f"with min={min(predict_Ls)}, max={max(predict_Ls)}, len={len(predict_Ls)}")
-
-    logger.debug("Normalizing predict parameters with respect to sample parameters.")
+    # predict energies at given parameter values with trained PMM wrt normalization of sample set
+    logger.debug("Normalizing prediction parameters with respect to sample parameters.")
     _, _, normed_predict_Ls = utils.normalize(predict_Ls, lmin, lmax)
-
-    logger.info(f"Predicting energies of trained PMM.")
+    logger.info("Predicting energies of trained PMM.")
     normed_predicted_energies = pmm_instance.predict_energies(normed_predict_Ls)
-
-    logger.debug(f"Denormalizing data for output.")
+    logger.debug(f"Denormalizing energy predictions with respect to sample energies.")
     predicted_energies = utils.denormalize(normed_predicted_energies, emin, emax)
-    return predict_Ls, predicted_energies
+    return losses, predicted_energies
 
 def _get_metadata(args, pmm_instance):
     metadata = {"timestamp" : time.strftime("%A, %b %d, %Y %H:%M:%S"),
@@ -126,23 +143,22 @@ def main():
 
     # parse config
     logger.info(f"Parsing config data and instantiating PMM.")
-    pmm_instance = _parse_config_and_pmm(args.pmm_name, args.config, args.config_file)
-
+    pmm_instance = _parse_config_and_pmm(args.pmm_name, args.config, args.config_file) 
+    logger.info(f"Parsing parameter values.") 
+    predict_Ls = _parse_parameter_values(args.parameters)
+    
     # load data from input_file
     logger.info(f"Loading energy data from input file.")
     sample_Ls, sample_energies = _load_data_from_input_file(args.input_file)
     
-    # sample pmm with loaded energies after normalizing
-    logger.info("Sampling pmm with energies loaded from file.")
-    lmin, lmax, emin, emax = _sample_pmm(pmm_instance, sample_Ls, sample_energies)
-    
-    # train the pmm for epoch number of cycles
-    logger.info(f"Training pmm for {args.epochs} cycles and storing loss every {args.store_loss} cycles.")
-    _, losses = pmm_instance.train_pmm(args.epochs, args.store_loss)
-
-    # predict energies at Ls
-    predict_Ls, predicted_energies = _predict_energies_from_pmm(pmm_instance, args.parameters, lmin, lmax, emin, emax)
-    if args.knum is not None: predicted_energies = predicted_energies[:, :args.knum]
+    # sample pmm with loaded energies, train pmm, and predict at given parameter values
+    if args.no_normalize:
+        # sample, train, and predict without normalizing sample set
+        losses, predicted_energies = _sample_train_predict_notnormed(args, pmm_instance, sample_Ls, sample_energies, predict_Ls)
+    else:
+        # sample, train, and predict with normalizing sample set
+        losses, predicted_energies = _sample_train_predict_normed(args, pmm_instance, sample_Ls, sample_energies, predict_Ls)
+    if args.knum is not None: predicted_energies = predicted_energies[:, :args.knum] # truncate to given knum
 
     # save energy data, pmm state, and loss data if desired
     metadata = _get_metadata(args, pmm_instance)
@@ -159,7 +175,8 @@ def main():
         io.save_loss(args.save_loss, losses, args.store_loss, metadata)
 
     # print data
-    _print_results(predict_Ls, predicted_energies, losses)
+    if args.quiet:
+        _print_results(predict_Ls, predicted_energies, losses)
     end = time.time()
     # print total time elapsed
     print(f"Done.\nElapsed time: {end - start:.3f} seconds.")

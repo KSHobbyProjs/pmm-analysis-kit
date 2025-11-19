@@ -26,7 +26,7 @@ def _parse_linestyles(linestyles, num_files):
     # if linestyles length is too short for files length, extend:
     if num_files  > len(linestyles):
         dif = num_files - len(linestyles)
-        linestyles += ['-'] * dif
+        linestyles += [linestyles[-1]] * dif
     linestyles = [ls.strip() for ls in linestyles] # strip each element for security
     return linestyles
 
