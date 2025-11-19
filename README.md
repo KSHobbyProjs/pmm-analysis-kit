@@ -1,12 +1,6 @@
 # pmm-utils
-A repository storing research progress into parametric matrix models applied to finite volume physics.
-
-# Parametric Matrix Model (PMM) and Eigenvector Continuation (EC)
-
-A research framework for learning parametric eigenvalue structures from sampled data.  
-The Parametric Matrix Model (PMM) provides a way to approximate the spectral behavior of a physical system whose Hamiltonian depends smoothly on a control parameter (e.g. system size, coupling constant, or external field strength).
-
-
+A repository for a set of tools for computing exact eigenpair data of a physical model, running a parametric matrix model on that data, or running
+eigenvector continuation on that data.
 
 ## Project Structure
 
@@ -20,13 +14,11 @@ The Parametric Matrix Model (PMM) provides a way to approximate the spectral beh
     │   ├── utils.py
     │   ├── pmm.py
     │   ├── io.py
-    │   ├── __init__.py
     │   ├── ec.py
     │   └── physics_models/
     │       ├── noninteracting_spins.py
     │       ├── ising.py
     │       ├── base_model.py
-    │       ├── __init__.py
     │       └── gaussian.py
     ├── README.md
     └── requirements.txt
