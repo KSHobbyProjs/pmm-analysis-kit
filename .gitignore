@@ -1,0 +1,16 @@
+# ignore all temporary python files (pycache, pyc, ipynb_checkpoints).
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# ignore the local python environment.
+.venv/
+
+# ignore all large data files
+*.dat
+*.txt
+*.h5
+
+# except the config file and the pip requirements.txt file
+!requirements.txt
+!config.txt
