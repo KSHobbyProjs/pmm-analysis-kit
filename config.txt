@@ -3,11 +3,11 @@
 dim=16
 num_primary=2
 num_secondary=0
-eta=1.0e-2
+eta=5.0e-2
 beta1=0.9
 beta2=0.999
 eps=1.0e-8
 absmaxgrad=1.0e+3
 l2=0.0
 mag=1.0e-1
-seed=135
+seed=502
