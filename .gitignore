@@ -11,6 +11,12 @@ __pycache__/
 *.txt
 *.h5
 
+# ignore results folder
+results/
+
 # except the config file and the pip requirements.txt file
 !requirements.txt
 !config.txt
+
+# ignore bash scripts
+*.sh

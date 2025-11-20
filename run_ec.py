@@ -36,6 +36,7 @@ def _parse_args():
     parser.add_argument("--vectors", action="store_true", help="Output eigenvectors as well as eigenvalues.")
     parser.add_argument("--dilate", action="store_true", help="Dilate the sample vectors to the predicted volume.")
     parser.add_argument("-v", "--verbose", action="count", default=0, help="Increase verbosity (-v, -vv).")
+    parser.add_argument("-q", "--quiet", action="store_true", help="Turn off print output.")
     args = parser.parse_args()
     return args
 
@@ -128,7 +129,8 @@ def main():
         _write_results(args, inputfile_model, predict_Ls, predicted_energies, predicted_eigenvectors)
 
     # print results
-    _print_results(args, predict_Ls, predicted_energies, predicted_eigenvectors)
+    if not args.quiet:
+        _print_results(args, predict_Ls, predicted_energies, predicted_eigenvectors)
     end = time.time()
     print(f"Done.\nElapsed time: {end - start:.3f} seconds.")
 

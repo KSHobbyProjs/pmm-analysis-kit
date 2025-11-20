@@ -1,9 +1,9 @@
 # config.txt
 # config file for pmm algorithm
-dim=2
+dim=5
 num_primary=2
 num_secondary=0
-eta=5.0e-2
+eta=1.0e-2
 beta1=0.9
 beta2=0.999
 eps=1.0e-8
