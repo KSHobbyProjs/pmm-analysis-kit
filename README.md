@@ -36,7 +36,6 @@ More information on the arguments used for each script can be found in their ind
 ---
 
 ## Project Structure
-## Project Structure
 
 ```
 └── pmm-analysis-kit/
