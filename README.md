@@ -1,5 +1,5 @@
 # pmm-utils
-A toolkit for computing exact eigenpair data of physical models and running a parametric matrix model / eigenvectors continuation on that data.
+A toolkit for computing exact eigenpair data of physical models and running a parametric matrix model / eigenvectors continuation using that data.
 
 ---
 
