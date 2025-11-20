@@ -32,3 +32,29 @@ More information on the arguments used for each script can be found in their ind
 `https://github.com/KSHobbyProjs/pmm.git`
 `https://github.com/KSHobbyProjs/ec.git`
 `https://github.com/KSHobbyProjs/exact-eigenpairs.git`
+
+---
+
+## Project Structure
+## Project Structure
+
+```
+└── pmm-analysis-kit/
+    ├── get_eigenpairs.py
+    ├── run_pmm.py
+    ├── run_ec.py
+    ├── src/
+    │   ├── parse.py
+    │   ├── utils.py
+    │   ├── pmm.py
+    │   ├── io.py
+    │   ├── ec.py
+    │   └── physics_models/
+    │       ├── noninteracting_spins.py
+    │       ├── ising.py
+    │       ├── base_model.py
+    │       └── gaussian.py
+    ├── README.md
+    └── requirements.txt
+```
+
