@@ -29,9 +29,9 @@ python plot_energies.py -f sample.h5 *.dat -l="o,-,--"
 ```
 
 More information on the arguments used for each script can be found in their individual git repos:
-`https://github.com/KSHobbyProjs/pmm.git`
-`https://github.com/KSHobbyProjs/ec.git`
-`https://github.com/KSHobbyProjs/exact-eigenpairs.git`
+- `https://github.com/KSHobbyProjs/pmm.git`
+- `https://github.com/KSHobbyProjs/ec.git`
+- `https://github.com/KSHobbyProjs/exact-eigenpairs.git`
 
 ---
 
