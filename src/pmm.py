@@ -10,8 +10,8 @@ logger = logging.getLogger(__name__)
 class PMM:
     # -------------------------- Initialization ---------------------------------------------
     def __init__(self, dim=10, num_primary=2, num_secondary=0,
-                 eta=.2e-2, beta1=0.9, beta2=0.999, eps=1e-8, absmaxgrad=1e3,
-                 l2=0.0, mag=0.5e-1, seed=0):
+                 eta=1.0e-2, beta1=0.9, beta2=0.999, eps=1.0e-8, absmaxgrad=1.0e3,
+                 l2=0.0, mag=1.0e-1, seed=0):
 
         self._init_kwargs = {"dim" : dim, "num_primary" : num_primary, "num_secondary" : num_secondary,
                               "eta" : eta, "beta1" : beta1, "beta2" : beta2, "eps" : eps, "absmaxgrad" : absmaxgrad,

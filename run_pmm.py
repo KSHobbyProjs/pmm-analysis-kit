@@ -128,12 +128,19 @@ def _write_energy_data(save_energies_path, predict_Ls, predicted_energies, metad
         logger.debug(f"Saved energy to .dat-type file.")
   
 
-def _print_results(predict_Ls, predicted_energies, losses):
+def _print_results(args, predict_Ls, predicted_energies, losses):
     print(losses[-1])
+    trnc = 9 # num of eigenvalues to print before skipping rest
+    knum = args.knum if args.knum is not None else len(predicted_energies[0])
     for i, L in enumerate(predict_Ls):
         print(f"Spectrum at L = {L:.3f}")
-        print(f"\t{predicted_energies[i]}")
-    
+        print(f"\t[ " + ", ".join(f"{eigval:.6f}" for eigval in predicted_energies[i][:trnc]), end="")
+        
+        if knum > trnc: 
+            print(f", ..., {predicted_energies[i][-1]:.6f} ] ({len(predicted_energies[i])} energies total)")
+        else: 
+            print(" ]")
+
 def main():
     # parse args, setup logging, and start timer
     args = _parse_args()
@@ -176,7 +183,7 @@ def main():
 
     # print data
     if args.quiet:
-        _print_results(predict_Ls, predicted_energies, losses)
+        _print_results(args, predict_Ls, predicted_energies, losses)
     end = time.time()
     # print total time elapsed
     print(f"Done.\nElapsed time: {end - start:.3f} seconds.")
