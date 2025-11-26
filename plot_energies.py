@@ -36,7 +36,8 @@ def main():
     parser.add_argument("-k", "--knum", type=str, default='0', help="Number of energies to plot per parameter.")
     parser.add_argument("-l", "--linestyle", type=str, default="-,--", help="Linestyle for each plot.")
     parser.add_argument("-q", "--quiet", action="store_false", help="Omit legend when plotting.")
-    parser.add_argument("-o", "--out", type=str, Default=None, help="Output png file name.")
+    parser.add_argument("-o", "--out", type=str, default=None, help="Output png file name.")
+    parser.add_argument("-n", "--no-show", action="store_true", help="Don't show figure after plotting.")
     args = parser.parse_args()
 
     # parse linestyles
@@ -59,7 +60,9 @@ def main():
         plt.legend()
     if args.out:
         plt.savefig(args.out)
-    plt.show()
+    if not args.no_show:
+        plt.show()
+    plt.close()
 
 if __name__=="__main__":
     main()
