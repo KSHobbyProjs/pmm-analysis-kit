@@ -61,6 +61,8 @@ def main():
     if args.out:
         plt.savefig(args.out)
     if not args.no_show:
+        if args.out is None:
+            print("[WARNING] You've selected --no-show and not specified --out, so the program isn't going to do anything.")
         plt.show()
     plt.close()
 
