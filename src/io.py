@@ -239,3 +239,75 @@ def _validate_eigenpair_data(parameters, energies, eigenvectors):
     logger.debug(f"Validated that parameters, energies, and eigenvectors read from file are shape "
                  f"{parameters.shape}, {energies.shape}, {eigenvectors.shape if eigenvectors is not None else None}.")
     return parameters, energies, eigenvectors
+
+def load_energy_radius_from_h5(path):
+    with h5py.File(path, "r") as f:
+        try: 
+            parameters = f["parameters"][:]
+            energies = f["energies"][:]
+            radius = f["radius"][:]
+        except KeyError as e:
+            raise RuntimeError(f"{path} is not formatted correctly. It must be a .h5 file with datasets 'parameters', 'energies', and 'radius'.")
+
+        # eigenvectors may or may not exist
+        eigenvectors = f.get("eigenvectors")
+        if eigenvectors is not None:
+            eigenvectors = eigenvectors[:]
+
+        # validate data to ensure compatibility with program
+        parameters, energies, eigenvectors = _validate_eigenpair_data(parameters, energies, eigenvectors)
+        radius = np.atleast_1d(np.asarray(radius))
+        if radius.shape != energies.shape:
+            raise ValueError(f"radius and energy data need to have the same shape, got "
+                             f"{energies.shape} vs {radius.shape}")
+
+        # load metadata
+        metadata = dict(f.attrs)
+
+        return parameters, energies, radius, eigenvectors, metadata
+
+def load_energy_radius_from_dat(path):
+    data = np.loadtxt(path, delimeter="\t", comments="#")
+    if data.ndim == 1:
+        data = data.reshape(1, -1)
+    parameters = data[:, 0]
+    energies = data[:, 2::2]
+    radius = data[:, 1::2]
+
+    parameters, energies, _ = _validate_eigenpair_data(parameters, energies, None)
+    radius = np.atleast_1d(np.asarray(radius))
+    if radius.shape != energies.shape:
+            raise ValueError(f"radius and energy data need to have the same shape, got "
+                             f"{energies.shape} vs {radius.shape}")
+
+    # load metadata
+    metadata = {}
+    with open(path, "r") as f:
+        for line in f: 
+            line = line.strip()
+            if line.startswith("#"):
+                line = line[1:].strip()
+                if ":" in line:
+                    key, val = line.split(":", 1)
+                    metadata[key.strip()] = val.strip()
+
+    return parameters, energies, metadata
+
+def write_radius_to_dat(path, parameters, rr, metadata=None):
+    with open(path, "w") as f:
+        # add metadata
+        metadata = metadata or {}
+        for key, val in metadata.items():
+            f.write(f"# {key} : {val}\n")
+        # add parameters and radius columns
+        np.savetxt(f, np.column_stack([parameters, rr]), fmt="%.8f", delimeter="\t")
+
+def write_radius_to_h5(path, parameters, rr, metadata=None):
+    with h5py.File(path, "w") as f:
+        f.create_dataset("parameters", data=parameters)
+        f.create_dataset("radius", data=rr)
+    
+        # add metadata
+        metadata = metadata or {}
+        for key, val in metadata.items():
+            f.attrs[key] = val
