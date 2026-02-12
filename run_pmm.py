@@ -64,7 +64,7 @@ def _parse_config_and_pmm(pmm_name_str, ansatz_str, config_str, config_file):
 
 def _load_data_from_input_file(input_file):
     if input_file.endswith(".h5"):
-        sample_Ls, sample_energies, _, _ = io.load_energies_from_h5(input_file)
+        sample_Ls, sample_energies, _, _, _ = io.load_energies_from_h5(input_file)
         logger.debug(f"Loaded energy data from HDF5 file.")
     else:
         sample_Ls, sample_energies, _ = io.load_energies_from_dat(input_file)

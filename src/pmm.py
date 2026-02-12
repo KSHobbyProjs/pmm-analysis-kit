@@ -69,11 +69,11 @@ class PMM:
         self._matrix_specs = tuple(matrix_specs)
         self._primary_specs = tuple(
                 spec for spec in self._matrix_specs
-                if spec.is_secondary
+                if not spec.is_secondary
             )
         self._secondary_specs = tuple(
                 spec for spec in self._matrix_specs
-                if not spec.is_secondary
+                if spec.is_secondary
             )
         # raise error if user attempts to train less than one primary matrices
         if len(self._matrix_specs) < 1: 
