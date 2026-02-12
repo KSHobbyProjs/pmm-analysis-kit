@@ -48,14 +48,14 @@ def main():
     fig, ax = plt.subplots()
     for i, file in enumerate(args.files):
         if file.endswith(".h5"):
-            Ls, energies, _, _, _ = io.load_energies_from_h5(file)
+            Ls, _, _, secondarydata, _ = io.load_energies_from_h5(file)
         else:
-            Ls, energies, _ = io.load_energies_from_dat(file)
+            raise RuntimeError("Secondary data is only ever stored in .h5 files. Can't process this file.")
         kidx = [k for k in knum if k < energies.shape[1]] # filter out out-of-bounds indices silently
-        ax.plot(Ls, energies[:, kidx], f'{linestyles[i]}', label=f"{file}")
+        ax.plot(Ls, secondarydata[:, kidx], f'{linestyles[i]}', label=f"{file}")
     ax.set_xlabel("Parameters")
-    ax.set_ylabel("Energies")
-    ax.set_title("Energies vs Parameters")
+    ax.set_ylabel("Secondary Data")
+    ax.set_title("Secondary Data vs Parameters")
     if args.quiet:
         plt.legend()
     if args.out:

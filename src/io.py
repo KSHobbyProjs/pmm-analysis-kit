@@ -5,7 +5,7 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-def write_energies_to_h5(path, parameters, energies, eigenvectors=None, metadata=None):
+def write_energies_to_h5(path, parameters, energies, eigenvectors=None, secondary_data=None, metadata=None):
     """
     Write spectral data (parameters, energies, and optionally eigenvectors)
     to an HDF5 file.
@@ -45,6 +45,9 @@ def write_energies_to_h5(path, parameters, energies, eigenvectors=None, metadata
         if eigenvectors is not None:
             eigenvectors = np.asarray(eigenvectors)
             f.create_dataset("eigenvectors", data=eigenvectors)
+        if secondary_data is not None:
+            secondary_data = np.asarray(secondary_data)
+            f.create_dataset("secondary", data=secondary_data)
 
         # add metadata
         metadata = metadata or {}
@@ -143,13 +146,18 @@ def load_energies_from_h5(path):
         if eigenvectors is not None:
             eigenvectors = eigenvectors[:]
 
+        # secondary data may or may not exist
+        secondary_data = f.get("secondary")
+        if secondary_data is not None:
+            secondary_data = secondary_data[:]
+
         # validate data to ensure compatibility with program
-        parameters, energies, eigenvectors = _validate_eigenpair_data(parameters, energies, eigenvectors)
+        parameters, energies, eigenvectors, secondary_data = _validate_eigenpair_data(parameters, energies, eigenvectors, secondary_data)
 
         # load metadata
         metadata = dict(f.attrs)
 
-        return parameters, energies, eigenvectors, metadata
+        return parameters, energies, eigenvectors, secondary_data, metadata
 
 def load_energies_from_dat(path):
     data = np.loadtxt(path, delimiter="\t", comments="#")
@@ -160,7 +168,7 @@ def load_energies_from_dat(path):
     energies = data[:, 1:]
     
     # validate data to ensure compatibility with program
-    parameters, energies, _ = _validate_eigenpair_data(parameters, energies, None)
+    parameters, energies, _, _ = _validate_eigenpair_data(parameters, energies, None, None)
 
     # load metadata
     metadata = {}
@@ -202,7 +210,7 @@ def save_loss(path, losses, store_loss, metadata=None):
         # add parameters, losses columns
         np.savetxt(f, np.column_stack([epochs_list, losses]), fmt="%.8f", delimiter="\t")
         
-def _validate_eigenpair_data(parameters, energies, eigenvectors):
+def _validate_eigenpair_data(parameters, energies, eigenvectors, secondary_data):
     parameters, energies = np.atleast_1d(np.asarray(parameters)), np.atleast_1d(np.asarray(energies))
     
     # handle parameters
@@ -236,78 +244,13 @@ def _validate_eigenpair_data(parameters, energies, eigenvectors):
             raise ValueError(f"energies and eigenvectors must have the same shape along the first 2 dimensions, got "
                              f"{energies.shape} vs {eigenvectors.shape[1:]}") 
 
-    logger.debug(f"Validated that parameters, energies, and eigenvectors read from file are shape "
-                 f"{parameters.shape}, {energies.shape}, {eigenvectors.shape if eigenvectors is not None else None}.")
-    return parameters, energies, eigenvectors
+    if secondary_data is not None:
+        secondary_data = np.atleast_1d(np.asarray(secondary_data))
+        if secondary_data.shape[0] != parameters.shape[0]:
+            raise ValueError(f"secondary data and parameters must have the same shape along the first dimension, got "
+                             f"{secondary_data[0]} vs {parameters.shape[0]}") 
 
-def load_energy_radius_from_h5(path):
-    with h5py.File(path, "r") as f:
-        try: 
-            parameters = f["parameters"][:]
-            energies = f["energies"][:]
-            radius = f["radius"][:]
-        except KeyError as e:
-            raise RuntimeError(f"{path} is not formatted correctly. It must be a .h5 file with datasets 'parameters', 'energies', and 'radius'.")
-
-        # eigenvectors may or may not exist
-        eigenvectors = f.get("eigenvectors")
-        if eigenvectors is not None:
-            eigenvectors = eigenvectors[:]
-
-        # validate data to ensure compatibility with program
-        parameters, energies, eigenvectors = _validate_eigenpair_data(parameters, energies, eigenvectors)
-        radius = np.atleast_1d(np.asarray(radius))
-        if radius.shape != energies.shape:
-            raise ValueError(f"radius and energy data need to have the same shape, got "
-                             f"{energies.shape} vs {radius.shape}")
-
-        # load metadata
-        metadata = dict(f.attrs)
-
-        return parameters, energies, radius, eigenvectors, metadata
-
-def load_energy_radius_from_dat(path):
-    data = np.loadtxt(path, delimeter="\t", comments="#")
-    if data.ndim == 1:
-        data = data.reshape(1, -1)
-    parameters = data[:, 0]
-    energies = data[:, 2::2]
-    radius = data[:, 1::2]
-
-    parameters, energies, _ = _validate_eigenpair_data(parameters, energies, None)
-    radius = np.atleast_1d(np.asarray(radius))
-    if radius.shape != energies.shape:
-            raise ValueError(f"radius and energy data need to have the same shape, got "
-                             f"{energies.shape} vs {radius.shape}")
-
-    # load metadata
-    metadata = {}
-    with open(path, "r") as f:
-        for line in f: 
-            line = line.strip()
-            if line.startswith("#"):
-                line = line[1:].strip()
-                if ":" in line:
-                    key, val = line.split(":", 1)
-                    metadata[key.strip()] = val.strip()
-
-    return parameters, energies, metadata
-
-def write_radius_to_dat(path, parameters, rr, metadata=None):
-    with open(path, "w") as f:
-        # add metadata
-        metadata = metadata or {}
-        for key, val in metadata.items():
-            f.write(f"# {key} : {val}\n")
-        # add parameters and radius columns
-        np.savetxt(f, np.column_stack([parameters, rr]), fmt="%.8f", delimeter="\t")
-
-def write_radius_to_h5(path, parameters, rr, metadata=None):
-    with h5py.File(path, "w") as f:
-        f.create_dataset("parameters", data=parameters)
-        f.create_dataset("radius", data=rr)
-    
-        # add metadata
-        metadata = metadata or {}
-        for key, val in metadata.items():
-            f.attrs[key] = val
+    logger.debug(f"Validated that parameters, energies, eigenvectors, and secondary data read from file are shape "
+                 f"{parameters.shape}, {energies.shape}, {eigenvectors.shape if eigenvectors is not None else None}, "
+                 f"{secondary_data.shape if secondary_data is not None else None}.")
+    return parameters, energies, eigenvectors, secondary_data
